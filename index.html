@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Floyd-Warshall Visualizer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.24.0/cytoscape.min.js"></script>
+    <style>
+        body { background: #f8f9fa; }
+        .matrix-input { width: 60px; text-align: center; }
+        table { margin: auto; border-collapse: collapse; }
+        th, td { text-align: center; padding: 8px; border: 1px solid #dee2e6; transition: background-color 0.3s ease; }
+        th { background: #e9ecef; }
+        .explanation { margin-top: 15px; font-size: 0.95rem; }
+        #controls { margin-top: 15px; }
+        #graph { width: 100%; height: 400px; border: 1px solid #dee2e6; border-radius: 6px; background: #fff; margin-top: 20px; }
+        #step-counter { font-weight: bold; margin-bottom: 10px; text-align: center; }
+    </style>
+</head>
+<body>
+<div class="container mt-4">
+    <h2 class="text-center text-primary">Floyd-Warshall Algorithm Visualizer</h2>
+
+    {% if error %}
+        <div class="alert alert-danger mt-3">{{ error }}</div>
+    {% endif %}
+
+    <form method="POST" class="mt-4 text-center">
+        <label>Number of nodes:</label>
+        <input type="number" name="size" value="{{size}}" min="2" max="10" class="form-control d-inline-block" style="width: 100px;">
+        <button type="submit" class="btn btn-primary ms-2">Generate Matrix</button>
+        <div class="mt-3">
+            <table>
+                {% for i in range(size) %}
+                <tr>
+                    {% for j in range(size) %}
+                    <td><input type="text" name="cell_{{i}}_{{j}}" value="{{matrix[i][j]}}" class="form-control matrix-input"></td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+        <div class="mt-3">
+            <button type="submit" class="btn btn-success">Run Algorithm</button>
+        </div>
+    </form>
+
+    {% if steps %}
+    <h4 class="mt-4">Step-by-Step:</h4>
+    <div id="step-counter"></div>
+    <div class="text-center">
+        <table id="matrix-table"></table>
+        <div class="explanation" id="explanation-text"></div>
+    </div>
+
+    <div id="controls" class="text-center">
+        <button id="prev-btn" class="btn btn-secondary me-2">Previous Step</button>
+        <button id="next-btn" class="btn btn-primary">Next Step</button>
+    </div>
+
+    <h4 class="mt-4">Graph Visualization:</h4>
+    <div id="graph"></div>
+
+    <script>
+        const steps = {{ steps|tojson }};
+        const explanations = {{ explanations|tojson }};
+        const changed_cells = {{ changed_cells_per_step|tojson }};
+        const size = {{ size }};
+        const table = document.getElementById("matrix-table");
+        const explanation = document.getElementById("explanation-text");
+        const stepCounter = document.getElementById("step-counter");
+        let currentStep = 0;
+
+        function renderStep(stepIndex) {
+            table.innerHTML = "";
+            const step = steps[stepIndex];
+            const changes = changed_cells[stepIndex];
+
+            step.forEach((row, i) => {
+                const tr = document.createElement("tr");
+                row.forEach((val, j) => {
+                    const td = document.createElement("td");
+                    td.textContent = val;
+                    if(val === "INF") td.style.backgroundColor = "#e9ecef";
+                    if(changes.some(c => c[0]===i && c[1]===j)) td.style.backgroundColor = "#fff3cd";
+                    tr.appendChild(td);
+                });
+                table.appendChild(tr);
+            });
+
+            explanation.textContent = explanations[stepIndex];
+            stepCounter.textContent = `Step ${stepIndex+1} of ${steps.length}`;
+            document.getElementById("prev-btn").disabled = (stepIndex === 0);
+            document.getElementById("next-btn").disabled = (stepIndex === steps.length - 1);
+
+            renderGraph(step);
+        }
+
+        document.getElementById("next-btn").addEventListener("click", () => {
+            if(currentStep < steps.length-1) currentStep++;
+            renderStep(currentStep);
+        });
+        document.getElementById("prev-btn").addEventListener("click", () => {
+            if(currentStep > 0) currentStep--;
+            renderStep(currentStep);
+        });
+
+        // Cytoscape graph rendering
+        const cy = cytoscape({
+            container: document.getElementById('graph'),
+            style: [
+                { selector: 'node', style: { 'background-color': '#0d6efd', 'label': 'data(id)', 'color': '#fff', 'text-valign': 'center', 'text-halign': 'center' } },
+                { selector: 'edge', style: { 'line-color': '#6c757d', 'label': 'data(weight)', 'font-size': 10, 'text-rotation': 'autorotate', 'curve-style': 'bezier' } }
+            ],
+            elements: []
+        });
+
+        function renderGraph(stepMatrix) {
+            const elements = [];
+            for(let i=0;i<size;i++) elements.push({ data: { id: `n${i+1}` } });
+            for(let i=0;i<size;i++){
+                for(let j=0;j<size;j++){
+                    if(stepMatrix[i][j] !== "INF" && i!==j) {
+                        elements.push({ data: { source: `n${i+1}`, target: `n${j+1}`, weight: stepMatrix[i][j] } });
+                    }
+                }
+            }
+            cy.elements().remove();
+            cy.add(elements);
+            cy.layout({ name: 'circle' }).run();
+        }
+
+        renderStep(0);
+    </script>
+    {% endif %}
+</div>
+</body>
+</html>
