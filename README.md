@@ -18,9 +18,9 @@ An interactive web-based visualization of the **Floyd-Warshall All Pairs Shortes
 
 Try this 3×3 matrix to see step-by-step updates:
 
-0 3 ∞
-3 0 1
-∞ 1 0
+- 0 3 ∞
+- 3 0 1
+- ∞ 1 0
 
   
 
