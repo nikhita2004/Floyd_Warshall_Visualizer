@@ -1,6 +1,6 @@
 # Floyd-Warshall Algorithm Visualizer
 
-An interactive web-based visualization of the **Floyd-Warshall All Pairs Shortest Path (APSP) algorithm**, built with Flask, HTML, CSS, and JavaScript. This tool helps you understand step-by-step how shortest paths are updated in a graph.
+An interactive web-based visualization of the **Floyd-Warshall All Pairs Shortest Path algorithm**, built with Flask, HTML, CSS, and JavaScript. This tool helps you understand step-by-step how shortest paths are updated in a graph.
 
 ---
 
